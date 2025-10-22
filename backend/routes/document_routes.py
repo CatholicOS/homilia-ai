@@ -15,10 +15,13 @@ import sys
 import os
 import logging
 
-# Add the services directory to the path
+import sys
+import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'services'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'utils'))
 
 from document_processing_service import DocumentProcessingService
+from hashing import decrypt_s3_key
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -519,6 +522,95 @@ async def get_health():
     except Exception as e:
         logger.error(f"Error checking health: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Health check failed: {str(e)}")
+
+
+@router.get("/content/{file_id}")
+async def get_document_content(file_id: str):
+    """
+    Get document content from S3 by file ID (which may be encrypted).
+    
+    Args:
+        file_id: File identifier (may be encrypted S3 key)
+        
+    Returns:
+        Document content as text or binary data
+    """
+    try:
+        # First try to decrypt the file_id as it might be an encrypted S3 key
+        decrypted_s3_key = decrypt_s3_key(file_id)
+        
+        if decrypted_s3_key:
+            # If decryption succeeded, use the decrypted S3 key directly
+            s3_key = decrypted_s3_key
+            logger.info(f"Using decrypted S3 key: {s3_key}")
+        else:
+            # If decryption failed, treat file_id as a regular document ID
+            doc_info = document_service.get_document_info(file_id)
+            
+            if not doc_info['success']:
+                if doc_info['error'] == 'Document not found':
+                    raise HTTPException(status_code=404, detail="Document not found")
+                raise HTTPException(status_code=500, detail=doc_info['error'])
+            
+            # Get the s3_key from the document metadata
+            s3_key = doc_info.get('s3_key')
+            if not s3_key:
+                raise HTTPException(status_code=404, detail="No S3 key found for this document")
+        
+        # Retrieve the file from S3
+        file_result = document_service.s3_service.get_file_bytes(s3_key)
+        
+        if not file_result['success']:
+            raise HTTPException(status_code=404, detail=f"Error retrieving file from S3: {file_result['error']}")
+        
+        # Determine content type
+        content_type = file_result.get('content_type', 'text/plain')
+        file_bytes = file_result['file_bytes']
+        
+        # Get filename from S3 metadata or use s3_key
+        filename = file_result.get('metadata', {}).get('filename', s3_key.split('/')[-1])
+        
+        # For text files, decode and return as text
+        if content_type.startswith('text/') or filename.lower().endswith(('.txt', '.rtf')):
+            try:
+                content = file_bytes.decode('utf-8')
+                return {
+                    "success": True,
+                    "content": content,
+                    "content_type": content_type,
+                    "filename": filename,
+                    "file_type": filename.split('.')[-1].lower() if '.' in filename else 'txt'
+                }
+            except UnicodeDecodeError:
+                # If it's not UTF-8, return as base64
+                import base64
+                content = base64.b64encode(file_bytes).decode('utf-8')
+                return {
+                    "success": True,
+                    "content": content,
+                    "content_type": content_type,
+                    "filename": filename,
+                    "file_type": filename.split('.')[-1].lower() if '.' in filename else 'txt',
+                    "encoding": "base64"
+                }
+        else:
+            # For binary files, return as base64
+            import base64
+            content = base64.b64encode(file_bytes).decode('utf-8')
+            return {
+                "success": True,
+                "content": content,
+                "content_type": content_type,
+                "filename": filename,
+                "file_type": filename.split('.')[-1].lower() if '.' in filename else 'bin',
+                "encoding": "base64"
+            }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting document content: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
 @router.get("/supported-formats")

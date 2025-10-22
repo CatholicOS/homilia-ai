@@ -4,18 +4,16 @@ Below is a detailed, prioritized, step-by-step to-do list to complete the whole 
 
 ---
 
-# Phase A — Project Initiation & Planning
+# Phase A — Project Initiation & Planning (DONE)
 **Goal:** Agree scope, repo layout, infra decisions, secrets handling, and onboarding for contributors.
 
 - Create GitHub repo(s) and initial branches (`main`, `dev`).
 - Define environment variable strategy and secrets storage.
-- Choose hosting targets for MVP (e.g., Render, Vercel + EC2, or single VPS).
-- Create high-level architecture diagram and ERD.
 - Set up issue tracker + milestone structure in GitHub.
 
 ---
 
-# Phase B — MVP: Single-tenant demo (no Postgres, no Redis)
+# Phase B — MVP: Single-tenant demo (no Postgres, no Redis) (DONE)
 **Goal:** Deliver an end-to-end demo: upload → extract → embed → index → chat.
 
 ## B.1 Backend skeleton + infra connectors
@@ -51,7 +49,6 @@ Below is a detailed, prioritized, step-by-step to-do list to complete the whole 
 
 ## B.6 QA & demo
 - End-to-end test: upload PDF → query → correct answer.
-- Deploy demo (Render/Vercel/Fly.io).
 
 ---
 
@@ -66,7 +63,7 @@ Below is a detailed, prioritized, step-by-step to-do list to complete the whole 
 ## C.2 Authentication & Authorization
 - Implement JWT login/signup.
 - Add password hashing, tokens.
-- Define roles: `superadmin`, `parish_admin`, `uploader`, `parishioner`.
+- Define roles: `superadmin`, `parish_admin`, `parishioner`.
 - Enforce role checks via middleware/dependencies.
 
 ## C.3 Multi-tenant enforcement

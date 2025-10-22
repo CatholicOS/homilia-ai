@@ -9,7 +9,9 @@ from cryptography.fernet import Fernet
 from typing import Optional
 
 # Generate or use a secret key for encryption
-SECRET_KEY = os.getenv('ENCRYPTION_KEY', Fernet.generate_key().decode())
+SECRET_KEY = os.getenv('ENCRYPTION_KEY')
+if not SECRET_KEY:
+    raise ValueError("ENCRYPTION_KEY environment variable is not set")
 
 def encrypt_s3_key(s3_key: str) -> str:
     """

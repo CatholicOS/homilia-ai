@@ -148,7 +148,7 @@ async def chat_with_agent(request: ChatRequest):
                 return "Error: No S3 key found"
 
             clean_response_text = re.sub(pattern, replace_with_source_number, response_text)
-            clean_response_text += "\n\n**Sources**:\n" + "\n".join([f"{count}. [{filename}](document/{getS3Key(document_id)})" for document_id, (filename, count) in sources.items()])
+            clean_response_text += "\n\n**Sources**:\n" + "\n".join([f"{count}. [{filename}](/document/{getS3Key(document_id)})" for document_id, (filename, count) in sources.items()])
         else:
             clean_response_text = response_text
         logger.info(f"clean_response_text: {clean_response_text}")

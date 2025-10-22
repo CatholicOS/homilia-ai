@@ -583,7 +583,7 @@ class DocumentProcessingService:
             # Parse start date
             try:
                 start_dt = datetime.strptime(start_date, "%Y-%m-%d")
-                start_iso = start_dt.isoformat() + "T00:00:00Z"
+                start_iso = start_dt.strftime("%Y-%m-%dT00:00:00Z")
             except ValueError:
                 return {'success': False, 'error': 'Invalid start_date format. Use YYYY-MM-DD'}
             
@@ -591,11 +591,11 @@ class DocumentProcessingService:
             if end_date:
                 try:
                     end_dt = datetime.strptime(end_date, "%Y-%m-%d")
-                    end_iso = end_dt.isoformat() + "T23:59:59Z"
+                    end_iso = end_dt.strftime("%Y-%m-%dT23:59:59Z")
                 except ValueError:
                     return {'success': False, 'error': 'Invalid end_date format. Use YYYY-MM-DD'}
             else:
-                end_iso = start_dt.isoformat() + "T23:59:59Z"
+                end_iso = start_dt.strftime("%Y-%m-%dT23:59:59Z")
             
             # Build date range query
             date_query = {

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
 import './ChatInterface.css';
 
 const ChatInterface = ({ onError }) => {
@@ -91,7 +92,13 @@ const ChatInterface = ({ onError }) => {
         {messages.map((message) => (
           <div key={message.id} className={`message ${message.type} ${message.isError ? 'error' : ''}`}>
             <div className="message-content">
-              <div className="message-text">{message.content}</div>
+              <div className="message-text">
+                {message.type === 'bot' ? (
+                  <ReactMarkdown>{message.content}</ReactMarkdown>
+                ) : (
+                  message.content
+                )}
+              </div>
               <div className="message-time">{formatTime(message.timestamp)}</div>
             </div>
           </div>

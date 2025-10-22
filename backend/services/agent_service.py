@@ -40,9 +40,26 @@ def get_doc_tool(file_id: str) -> dict[str, str]:
     Returns:
         str: The full text of the document
     """
+    # First, get the document info to retrieve the s3_key
+    document_processing_service = DocumentProcessingService()
+    doc_info = document_processing_service.get_document_info(file_id)
+    
+    if not doc_info['success']:
+        return f"Error: {doc_info['error']}"
+    
+    # Get the s3_key from the document metadata
+    s3_key = doc_info.get('s3_key')
+    if not s3_key:
+        return "Error: No S3 key found for this document"
+    
+    # Now retrieve the file from S3 using the s3_key
     s3_service = S3Service()
-    file_bytes = s3_service.get_file_bytes(file_id)['file_bytes']
-    return file_bytes.decode('utf-8')
+    file_result = s3_service.get_file_bytes(s3_key)
+    
+    if not file_result['success']:
+        return f"Error retrieving file from S3: {file_result['error']}"
+    
+    return file_result['file_bytes'].decode('utf-8')
 
 
 @tool
@@ -143,10 +160,20 @@ def create_agent():
             "temperature": 0.7,
         }
     )
+
+    system_prompt = """
+    You are a helpful assistant that can answer questions with homilies and bulletins and get readings.
+    Be consice and try to match the tone of the source documents as closely as possible.
+    If a question can not be answered with the tools or documents, say so.
+    Do not respond to inappropriate questions.
+
+    If you use a document as context, include inline citations of the document id and filename in the response like this: [Document ID: <document_id>, Filename: <filename>]
+    """
     
     agent = Agent(
         name="Homilia Agent",
         description="A agent that can be used to answer questions with homilies and bulletins and get readings",
+        system_prompt=system_prompt,
         model=openai_model,
         tools=[get_relevant_docs_tool, get_doc_tool, get_date_tool, get_readings_tool, get_documents_by_date_tool]
     )

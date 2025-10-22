@@ -120,6 +120,18 @@ class ApiService {
 
     return response.json();
   }
+
+  async getDocumentContent(fileId) {
+    const response = await fetch(`${API_BASE_URL}/documents/content/${fileId}`, {
+      method: 'GET',
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to get document content: ${response.statusText}`);
+    }
+
+    return response.json();
+  }
 }
 
 export default new ApiService();

@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import DocumentUpload from './components/DocumentUpload';
 import ChatInterface from './components/ChatInterface';
+import DocumentDisplay from './components/DocumentDisplay';
 import './App.css';
 
-function App() {
+function MainApp() {
   const [selectedDocument, setSelectedDocument] = useState(null);
   const [error, setError] = useState(null);
 
@@ -52,6 +54,17 @@ function App() {
         </div>
       </main>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<MainApp />} />
+        <Route path="/document/:fileId" element={<DocumentDisplay />} />
+      </Routes>
+    </Router>
   );
 }
 

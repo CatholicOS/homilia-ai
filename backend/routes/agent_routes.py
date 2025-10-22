@@ -7,10 +7,18 @@ including chat functionality and document-based Q&A.
 
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Tuple
 import logging
 import asyncio
+import re
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'services'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'utils'))
+
 from services.agent_service import create_agent
+from services.document_processing_service import DocumentProcessingService
+from hashing import encrypt_s3_key
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -30,7 +38,7 @@ class ChatResponse(BaseModel):
     response: str
     conversation_id: Optional[str] = None
     document_context: Optional[Dict[str, Any]] = None
-    sources: Optional[list] = None
+    sources: Optional[Dict[str, Tuple[str, int]]] = None
 
 class AgentInfo(BaseModel):
     """Agent information model."""
@@ -112,12 +120,43 @@ async def chat_with_agent(request: ChatRequest):
         response_text = str(response) if response else "I apologize, but I couldn't process your request."
         
         logger.info(f"Agent response generated successfully")
+
+        pattern = r'\[Document ID: ([^,]+), Filename: ([^\]]+)\]'
+        matches = re.findall(pattern, response_text)
+        sources = {}
+        count = 1
+        for document_id, filename in matches:
+            if document_id not in sources:
+                sources[document_id] = (filename, count)
+                count += 1
+        if len(sources) > 0:
+            # Replace pattern with the source number
+            def replace_with_source_number(match):
+                document_id = match.group(1)
+                if document_id in sources:
+                    return f"[{sources[document_id][1]}]"
+                return match.group(0)  # Return original if not found
+
+            document_processing_service = DocumentProcessingService()
+            def getS3Key(document_id):
+                doc_info = document_processing_service.get_document_info(document_id)
+                if not doc_info['success']:
+                    return f"Error: {doc_info['error']}"
+                s3_key = doc_info.get('s3_key')
+                if s3_key:
+                    return encrypt_s3_key(s3_key)
+                return "Error: No S3 key found"
+
+            clean_response_text = re.sub(pattern, replace_with_source_number, response_text)
+            clean_response_text += "\n\n**Sources**:\n" + "\n".join([f"{count}. [{filename}](document/{getS3Key(document_id)})" for document_id, (filename, count) in sources.items()])
+        else:
+            clean_response_text = response_text
+        logger.info(f"clean_response_text: {clean_response_text}")
         
         return ChatResponse(
-            response=response_text,
+            response=clean_response_text,
             conversation_id=request.conversation_id,
-            document_context={"document_id": request.document_id} if request.document_id else None,
-            sources=None  # Could be enhanced to include source documents
+            sources=sources  # Include the sources dictionary
         )
         
     except Exception as e:

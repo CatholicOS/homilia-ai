@@ -61,7 +61,7 @@ This will install all necessary packages including:
 
 1. **Copy the environment template:**
    ```bash
-   copy env.example .env
+   copy .env.sample .env
    ```
 
 2. **Edit the `.env` file** with your actual configuration values:

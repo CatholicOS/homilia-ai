@@ -106,13 +106,27 @@ pip install -r requirements.txt
 Create `.env` in `backend/`:
 
 ```
-DATABASE_URL=postgresql+psycopg2://user:password@localhost:5432/parishchat
-S3_BUCKET_NAME=your-s3-bucket
-AWS_ACCESS_KEY_ID=your-aws-key
-AWS_SECRET_ACCESS_KEY=your-aws-secret
-OPENSEARCH_URL=https://your-opensearch-endpoint
-JWT_SECRET=supersecret
-STRANDS_API_KEY=your-strands-api-key
+# OpenAI Configuration (REQUIRED)
+OPENAI_API_KEY=your-key
+
+# OpenSearch Configuration 
+OPENSEARCH_INITIAL_ADMIN_PASSWORD=example-password
+
+OPENSEARCH_HOST=localhost
+OPENSEARCH_PORT=9200
+OPENSEARCH_USERNAME=admin
+OPENSEARCH_PASSWORD=example-password
+OPENSEARCH_USE_SSL=false
+OPENSEARCH_SECURITY_DISABLED=true
+
+# AWS S3 Configuration (REQUIRED)
+AWS_ACCESS_KEY_ID=example-access-key
+AWS_SECRET_ACCESS_KEY=example-scret-key
+AWS_REGION=us-east-1
+S3_BUCKET_NAME=homilia-ai-dev
+
+# Encryption for links
+ENCRYPTION_KEY=example-key
 ```
 
 #### Run database migrations
@@ -122,7 +136,7 @@ alembic upgrade head
 
 #### Start the backend server
 ```
-uvicorn app.main:app --reload
+uvicorn main:app --reload
 ```
 
 ---
@@ -132,7 +146,7 @@ uvicorn app.main:app --reload
 ```
 cd frontend
 npm install
-npm run dev
+npm start
 ```
 
 The app will start on http://localhost:####

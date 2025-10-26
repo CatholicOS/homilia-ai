@@ -1,12 +1,12 @@
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
 class ApiService {
-  async uploadDocument(file, parishId = 'default', documentType = 'document', useTextract = false) {
+  async uploadDocument(file, parishId = 'default', documentType = 'document', sermonDate = null) {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('parish_id', parishId);
     formData.append('document_type', documentType);
-    formData.append('use_textract', useTextract.toString());
+    formData.append('sermon_date', sermonDate);
 
     const response = await fetch(`${API_BASE_URL}/documents/upload`, {
       method: 'POST',

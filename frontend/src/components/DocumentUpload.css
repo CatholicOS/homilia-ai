@@ -8,6 +8,45 @@
   font-size: 1.5rem;
 }
 
+.sermon-date-input {
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.sermon-date-input label {
+  color: #555;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.sermon-date-input input[type="date"] {
+  padding: 0.6rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+  color: #333;
+  background-color: #fff;
+  cursor: pointer;
+  transition: border-color 0.3s ease;
+}
+
+.sermon-date-input input[type="date"]:hover:not(:disabled) {
+  border-color: #007bff;
+}
+
+.sermon-date-input input[type="date"]:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.sermon-date-input input[type="date"]:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+}
+
 .upload-area {
   border: 2px dashed #ccc;
   border-radius: 8px;

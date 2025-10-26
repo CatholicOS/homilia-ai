@@ -123,6 +123,7 @@ class DocumentProcessingService:
                                  filename: str,
                                  parish_id: str,
                                  document_type: str = "document",
+                                 sermon_date: Optional[str] = None,
                                  metadata: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
         Process a document from bytes through the complete pipeline.
@@ -159,6 +160,7 @@ class DocumentProcessingService:
                 filename=filename,
                 parish_id=parish_id,
                 document_type=document_type,
+                sermon_date=sermon_date,
                 extraction_metadata=extraction_result,
                 additional_metadata=metadata
             )
@@ -173,7 +175,9 @@ class DocumentProcessingService:
                               filename: str,
                               parish_id: str,
                               document_type: str,
+                              
                               extraction_metadata: Dict[str, Any],
+                              sermon_date: Optional[str] = None,
                               additional_metadata: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
         Process extracted text through chunking, embedding, and storage.
@@ -184,6 +188,7 @@ class DocumentProcessingService:
             filename: Original filename
             parish_id: Parish identifier
             document_type: Type of document
+            sermon_date: Sermon date
             extraction_metadata: Metadata from text extraction
             additional_metadata: Additional metadata
             
@@ -264,9 +269,11 @@ class DocumentProcessingService:
                     'source': f"{parish_id}_{document_type}",
                     'text': chunk['text'],
                     'embedding': embedding_result.embeddings[i],
+                    'sermon_date': sermon_date if sermon_date else None,
                     'metadata': {
                         'parish_id': parish_id,
                         'document_type': document_type,
+                        'sermon_date': sermon_date if sermon_date else None,
                         'chunk_index': i,
                         'chunk_count': len(chunks),
                         'chunk_start': chunk['start'],
@@ -565,7 +572,7 @@ class DocumentProcessingService:
                              document_type: Optional[str] = None,
                              limit: int = 100) -> Dict[str, Any]:
         """
-        Get documents created within a date range.
+        Get documents by sermon date within a date range.
         
         Args:
             start_date: Start date in YYYY-MM-DD format
@@ -575,34 +582,33 @@ class DocumentProcessingService:
             limit: Maximum number of results to return
             
         Returns:
-            Dict containing documents created in the date range
+            Dict containing documents with sermon dates in the date range
         """
         try:
             from datetime import datetime
             
-            # Parse start date
+            # Validate date format
             try:
-                start_dt = datetime.strptime(start_date, "%Y-%m-%d")
-                start_iso = start_dt.strftime("%Y-%m-%dT00:00:00Z")
+                datetime.strptime(start_date, "%Y-%m-%d")
             except ValueError:
                 return {'success': False, 'error': 'Invalid start_date format. Use YYYY-MM-DD'}
             
-            # Parse end date or default to start date
             if end_date:
                 try:
-                    end_dt = datetime.strptime(end_date, "%Y-%m-%d")
-                    end_iso = end_dt.strftime("%Y-%m-%dT23:59:59Z")
+                    datetime.strptime(end_date, "%Y-%m-%d")
                 except ValueError:
                     return {'success': False, 'error': 'Invalid end_date format. Use YYYY-MM-DD'}
-            else:
-                end_iso = start_dt.strftime("%Y-%m-%dT23:59:59Z")
             
-            # Build date range query
+            # Use end_date if provided, otherwise use start_date
+            final_end_date = end_date if end_date else start_date
+            
+            # Build date range query for sermon_date
+            # Since sermon_date is stored as a string "YYYY-MM-DD", we can do string comparison
             date_query = {
                 "range": {
-                    "metadata.created_at": {
-                        "gte": start_iso,
-                        "lte": end_iso
+                    "sermon_date.keyword": {
+                        "gte": start_date,
+                        "lte": final_end_date
                     }
                 }
             }
@@ -610,11 +616,11 @@ class DocumentProcessingService:
             # Build filter conditions
             filter_conditions = [date_query]
             
-            if parish_id:
-                filter_conditions.append({"term": {"metadata.parish_id.keyword": parish_id}})
+            # if parish_id:
+            #     filter_conditions.append({"term": {"metadata.parish_id.keyword": parish_id}})
             
-            if document_type:
-                filter_conditions.append({"term": {"metadata.document_type.keyword": document_type}})
+            # if document_type:
+            #     filter_conditions.append({"term": {"metadata.document_type.keyword": document_type}})
             
             # Create the main query
             if len(filter_conditions) == 1:
@@ -622,12 +628,13 @@ class DocumentProcessingService:
             else:
                 query = {"bool": {"must": filter_conditions}}
             
+            logger.debug(f"Query: {query}")
             # Perform the search
             search_result = self.opensearch_service.field_search(
                 query=query,
                 size=limit,
-                fields_to_return=['file_id', 'filename', 'source', 'metadata'],
-                sort=[{"metadata.created_at": {"order": "desc"}}]
+                fields_to_return=['file_id', 'filename', 'source', 'metadata', 'sermon_date'],
+                sort=[{"sermon_date.keyword": {"order": "desc"}}]
             )
             
             if not search_result['success']:
@@ -643,17 +650,18 @@ class DocumentProcessingService:
                         'filename': result['document']['filename'],
                         'source': result['document']['source'],
                         'metadata': result['document']['metadata'],
+                        'sermon_date': result['document'].get('sermon_date') or result['document']['metadata'].get('sermon_date'),
                         'created_at': result['document']['metadata'].get('created_at')
                     }
             
-            # Convert to list and sort by creation date (newest first)
+            # Convert to list and sort by sermon date (newest first)
             results = list(file_results.values())
-            results.sort(key=lambda x: x['created_at'], reverse=True)
-            
+            results.sort(key=lambda x: (x['sermon_date'] or ''), reverse=True)
+            logger.info(f"Found {len(results)} documents for date range {start_date} to {final_end_date}")
             return {
                 'success': True,
                 'start_date': start_date,
-                'end_date': end_date or start_date,
+                'end_date': final_end_date,
                 'results': results,
                 'total_documents': len(results),
                 'total_chunks': len(search_result['results'])

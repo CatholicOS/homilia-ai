@@ -657,7 +657,7 @@ class DocumentProcessingService:
             # Convert to list and sort by sermon date (newest first)
             results = list(file_results.values())
             results.sort(key=lambda x: (x['sermon_date'] or ''), reverse=True)
-            logger.info(f"Results: {results}")
+            logger.info(f"Found {len(results)} documents for date range {start_date} to {final_end_date}")
             return {
                 'success': True,
                 'start_date': start_date,

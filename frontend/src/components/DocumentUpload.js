@@ -4,6 +4,7 @@ import './DocumentUpload.css';
 const DocumentUpload = ({ onDocumentUploaded, onError }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
+  const [sermonDate, setSermonDate] = useState('');
   const fileInputRef = useRef(null);
 
   const handleDrag = (e) => {
@@ -56,7 +57,8 @@ const DocumentUpload = ({ onDocumentUploaded, onError }) => {
 
     try {
       const apiService = await import('../services/api');
-      const result = await apiService.default.uploadDocument(file, 'default', 'document', false);
+      const formattedDate = sermonDate ? sermonDate : null;
+      const result = await apiService.default.uploadDocument(file, 'default', 'document', formattedDate);
       onDocumentUploaded(result);
     } catch (error) {
       onError(`Upload failed: ${error.message}`);
@@ -72,6 +74,18 @@ const DocumentUpload = ({ onDocumentUploaded, onError }) => {
   return (
     <div className="document-upload">
       <h2>Upload Document</h2>
+      
+      <div className="sermon-date-input">
+        <label htmlFor="sermon-date">Sermon Date (Optional):</label>
+        <input
+          id="sermon-date"
+          type="date"
+          value={sermonDate}
+          onChange={(e) => setSermonDate(e.target.value)}
+          disabled={isUploading}
+        />
+      </div>
+
       <div
         className={`upload-area ${dragActive ? 'drag-active' : ''} ${isUploading ? 'uploading' : ''}`}
         onDragEnter={handleDrag}

@@ -105,7 +105,7 @@ async def upload_document(
     file: UploadFile = File(..., description="Document file to upload"),
     parish_id: str = Form(..., description="Parish identifier"),
     document_type: str = Form(default="document", description="Type of document"),
-    use_textract: bool = Form(default=False, description="Use AWS Textract for PDF processing"),
+    sermon_date: str = Form(default=None, description="Sermon date"),
     metadata: Optional[str] = Form(default=None, description="Additional metadata as JSON string")
 ):
     """
@@ -123,7 +123,7 @@ async def upload_document(
         file: Document file to upload
         parish_id: Parish identifier
         document_type: Type of document (homily, bulletin, etc.)
-        use_textract: Whether to use AWS Textract for PDF files
+        sermon_date: Sermon date
         metadata: Additional metadata as JSON string
         
     Returns:
@@ -167,6 +167,7 @@ async def upload_document(
             filename=file.filename,
             parish_id=parish_id,
             document_type=document_type,
+            sermon_date=sermon_date,
             metadata=additional_metadata
         )
         
@@ -198,7 +199,7 @@ async def upload_documents_batch(
     files: List[UploadFile] = File(..., description="List of document files to upload"),
     parish_id: str = Form(..., description="Parish identifier"),
     document_type: str = Form(default="document", description="Type of document"),
-    use_textract: bool = Form(default=False, description="Use AWS Textract for PDF processing"),
+    sermon_date: str = Form(default=None, description="Sermon date"),
     metadata: Optional[str] = Form(default=None, description="Additional metadata as JSON string")
 ):
     """
@@ -266,6 +267,7 @@ async def upload_documents_batch(
                     filename=file.filename,
                     parish_id=parish_id,
                     document_type=document_type,
+                    sermon_date=sermon_date,
                     metadata=additional_metadata
                 )
                 

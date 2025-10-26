@@ -628,7 +628,7 @@ class DocumentProcessingService:
             else:
                 query = {"bool": {"must": filter_conditions}}
             
-            logger.info(f"Query: {query}")
+            logger.debug(f"Query: {query}")
             # Perform the search
             search_result = self.opensearch_service.field_search(
                 query=query,

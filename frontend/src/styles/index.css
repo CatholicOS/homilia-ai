@@ -1,0 +1,80 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-bg-dark: #111;
+  --color-bg-light: #F6F6F3;
+  --color-text-light: #FFF;
+  --color-text-dark: #222;
+  --color-accent: #D4B15A;
+
+  --radius-md: 8px;
+  --radius-lg: 12px;
+
+  --space-sm: 16px;
+  --space-md: 24px;
+  --space-lg: 48px;
+  --space-xl: 80px;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  background-color: var(--color-bg-dark);
+  color: #E4E4E4;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+.skip-link:focus {
+  left: 16px;
+  top: 16px;
+  width: auto;
+  height: auto;
+  padding: 8px 12px;
+  background: #D4B15A;
+  color: #222;
+  border-radius: 8px;
+}
+
+.container-max {
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 24px;
+  padding-right: 24px;
+}
+
+.btn {
+  @apply inline-flex items-center justify-center px-5 py-3 rounded-md transition-transform duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#D4B15A];
+}
+
+.btn-primary {
+  background-color: var(--color-accent);
+  color: var(--color-text-dark);
+}
+
+.btn-primary:hover { transform: translateY(-1px); }
+
+.btn-secondary {
+  @apply border border-zinc-500 text-zinc-100;
+}
+
+.card {
+  @apply rounded-md shadow-soft bg-zinc-900/80 border border-zinc-800;
+}
+
+.section {
+  @apply py-20 md:py-28;
+}
+

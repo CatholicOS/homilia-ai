@@ -393,7 +393,7 @@ async def search_documents(
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
-@router.delete("/{file_id}", response_model=DocumentDeleteResponse)
+@router.delete("/delete/{file_id}", response_model=DocumentDeleteResponse)
 async def delete_document(file_id: str):
     """
     Delete a document and all its chunks from the system.
@@ -481,6 +481,78 @@ async def get_documents_by_date(
         raise
     except Exception as e:
         logger.error(f"Error getting documents by date: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+
+class DocumentListResponse(BaseModel):
+    success: bool
+    results: Optional[List[Dict[str, Any]]] = None
+    total_documents: Optional[int] = None
+    total_chunks: Optional[int] = None
+    error: Optional[str] = None
+
+
+@router.get("/list", response_model=DocumentListResponse)
+async def list_documents_by_parish(
+    parish_id: str = Query(..., description="Parish identifier"),
+    document_type: Optional[str] = Query(default=None, description="Document type filter"),
+    limit: int = Query(default=1000, description="Maximum number of results to return")
+):
+    """
+    List all documents for a given parish, aggregated by file.
+    """
+    try:
+        result = document_service.get_documents_by_parish(
+            parish_id=parish_id,
+            document_type=document_type,
+            limit=limit
+        )
+
+        if not result['success']:
+            raise HTTPException(status_code=500, detail=result['error'])
+
+        return DocumentListResponse(
+            success=True,
+            results=result['results'],
+            total_documents=result['total_documents'],
+            total_chunks=result['total_chunks']
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error listing documents by parish: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+
+@router.get("/parish", response_model=DocumentListResponse)
+async def list_documents_by_parish_alt(
+    parish_id: str = Query(..., description="Parish identifier"),
+    document_type: Optional[str] = Query(default=None, description="Document type filter"),
+    limit: int = Query(default=1000, description="Maximum number of results to return")
+):
+    """
+    Alias of /documents/list for compatibility.
+    """
+    try:
+        result = document_service.get_documents_by_parish(
+            parish_id=parish_id,
+            document_type=document_type,
+            limit=limit
+        )
+
+        if not result['success']:
+            raise HTTPException(status_code=500, detail=result['error'])
+
+        return DocumentListResponse(
+            success=True,
+            results=result['results'],
+            total_documents=result['total_documents'],
+            total_chunks=result['total_chunks']
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error listing documents by parish: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 

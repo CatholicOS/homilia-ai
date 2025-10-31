@@ -89,12 +89,12 @@ def get_documents_by_date_tool(start_date: str, end_date: str = None, parish_id:
     Get documents created within a date range from the database
     
     This tool retrieves documents that were created between the start_date and end_date (inclusive).
-    You can optionally filter by parish_id and document_type.
+    You must filter by parish_id and optionally by document_type.
     
     Args:
         start_date: Start date in YYYY-MM-DD format
         end_date: End date in YYYY-MM-DD format (optional, defaults to start_date)
-        parish_id: Optional parish identifier to filter by
+        parish_id: Parish identifier to filter by
         document_type: Optional document type to filter by (e.g., "homily", "bulletin")
     Returns:
         dict[str, str]: A dictionary containing the documents created in the date range
@@ -166,6 +166,8 @@ def create_agent():
     Be consice and try to match the tone of the source documents as closely as possible.
     If a question can not be answered with the tools or documents, say so.
     Do not respond to inappropriate questions.
+    Always use parish_id if provided to filter the documents.
+    Always use the get_date tool first to get the current date.
 
     If you use a document as context, include inline citations of the document id and filename in the response like this: [Document ID: <document_id>, Filename: <filename>]
     """

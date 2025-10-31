@@ -32,6 +32,7 @@ class ChatRequest(BaseModel):
     message: str
     document_id: Optional[str] = None
     conversation_id: Optional[str] = None
+    parish_id: Optional[str] = None
 
 class ChatResponse(BaseModel):
     """Response model for chat with agent."""
@@ -102,10 +103,16 @@ async def chat_with_agent(request: ChatRequest):
     try:
         agent = get_agent()
         
-        # Prepare the message with context if document_id is provided
-        message = request.message
+        # Prepare the message with contextual hints
+        context_parts = []
+        if request.parish_id:
+            context_parts.append(f"Parish ID: {request.parish_id}")
         if request.document_id:
-            message = f"Context: Document ID {request.document_id}\n\nUser question: {request.message}"
+            context_parts.append(f"Document ID: {request.document_id}")
+        if context_parts:
+            message = f"Context: {' | '.join(context_parts)}\n\nUser question: {request.message}"
+        else:
+            message = request.message
         
         logger.info(f"Processing chat request: {request.message[:100]}...")
         
@@ -130,6 +137,7 @@ async def chat_with_agent(request: ChatRequest):
                 sources[document_id] = (filename, count)
                 count += 1
         if len(sources) > 0:
+            logger.debug(f"sources: {sources}")
             # Replace pattern with the source number
             def replace_with_source_number(match):
                 document_id = match.group(1)
@@ -148,7 +156,7 @@ async def chat_with_agent(request: ChatRequest):
                 return "Error: No S3 key found"
 
             clean_response_text = re.sub(pattern, replace_with_source_number, response_text)
-            clean_response_text += "\n\n**Sources**:\n" + "\n".join([f"{count}. [{filename}](/document/{getS3Key(document_id)})" for document_id, (filename, count) in sources.items()])
+            clean_response_text += "\n\n**Sources**:\n" + "\n".join([f"{count}. [{filename}](/doc/{getS3Key(document_id)})" for document_id, (filename, count) in sources.items()])
         else:
             clean_response_text = response_text
         logger.info(f"clean_response_text: {clean_response_text}")
@@ -167,7 +175,7 @@ async def chat_with_agent(request: ChatRequest):
         )
 
 @router.post("/chat/simple")
-async def simple_chat(message: str, document_id: Optional[str] = None):
+async def simple_chat(message: str, document_id: Optional[str] = None, parish_id: Optional[str] = None):
     """
     Simplified chat endpoint for basic interactions.
     
@@ -185,9 +193,12 @@ async def simple_chat(message: str, document_id: Optional[str] = None):
         agent = get_agent()
         
         # Prepare the message with context if document_id is provided
-        full_message = message
+        context_parts = []
+        if parish_id:
+            context_parts.append(f"Parish ID: {parish_id}")
         if document_id:
-            full_message = f"Context: Document ID {document_id}\n\nUser question: {message}"
+            context_parts.append(f"Document ID: {document_id}")
+        full_message = f"Context: {' | '.join(context_parts)}\n\nUser question: {message}" if context_parts else message
         
         logger.info(f"Processing simple chat request: {message[:100]}...")
         
@@ -204,6 +215,7 @@ async def simple_chat(message: str, document_id: Optional[str] = None):
             "message": message,
             "response": response_text,
             "document_id": document_id,
+            "parish_id": parish_id,
             "status": "success"
         }
         

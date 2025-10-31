@@ -565,6 +565,77 @@ class DocumentProcessingService:
             logger.error(f"Error searching documents: {str(e)}")
             return {'success': False, 'error': str(e)}
     
+
+    def get_documents_by_parish(self, parish_id: str, document_type: Optional[str] = None, limit: int = 1000) -> Dict[str, Any]:
+        """
+        List documents for a parish, aggregated by file_id.
+
+        Args:
+            parish_id: Parish identifier to filter by
+            document_type: Optional document type filter
+            limit: Maximum number of results to return
+
+        Returns:
+            Dict with aggregated per-file entries similar to get_documents_by_date
+        """
+        try:
+            # Build term filters
+            filters: List[Dict[str, Any]] = [
+                {"term": {"metadata.parish_id.keyword": parish_id}}
+            ]
+            if document_type:
+                filters.append({"term": {"metadata.document_type.keyword": document_type}})
+
+            query: Dict[str, Any] = {"bool": {"filter": filters}}
+
+            fields_to_return = [
+                "file_id", "filename", "source", "created_at",
+                "metadata.parish_id", "metadata.document_type"
+            ]
+
+            search_result = self.opensearch_service.field_search(
+                query=query,
+                size=limit,
+                fields_to_return=fields_to_return,
+                sort=[{"created_at": {"order": "desc"}}]
+            )
+
+            if not search_result.get('success'):
+                return {"success": False, "error": search_result.get('error', 'Search failed')}
+
+            # Aggregate by file_id
+            file_id_to_entry: Dict[str, Dict[str, Any]] = {}
+            total_chunks = 0
+            for item in search_result.get('results', []):
+                doc = item.get('document', {})
+                file_id = doc.get('file_id')
+                if not file_id:
+                    continue
+                total_chunks += 1
+                if file_id not in file_id_to_entry:
+                    file_id_to_entry[file_id] = {
+                        'file_id': file_id,
+                        'filename': doc.get('filename'),
+                        'source': doc.get('source'),
+                        'chunk_count': 1,
+                        'parish_id': (doc.get('metadata') or {}).get('parish_id'),
+                        'document_type': (doc.get('metadata') or {}).get('document_type'),
+                        'created_at': doc.get('created_at'),
+                    }
+                else:
+                    file_id_to_entry[file_id]['chunk_count'] += 1
+
+            results = list(file_id_to_entry.values())
+
+            return {
+                'success': True,
+                'results': results,
+                'total_documents': len(results),
+                'total_chunks': total_chunks
+            }
+        except Exception as e:
+            logger.error(f"Error listing documents by parish: {str(e)}")
+            return {'success': False, 'error': str(e)}
     def get_documents_by_date(self, 
                              start_date: str, 
                              end_date: Optional[str] = None,

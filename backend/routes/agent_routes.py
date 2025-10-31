@@ -137,7 +137,7 @@ async def chat_with_agent(request: ChatRequest):
                 sources[document_id] = (filename, count)
                 count += 1
         if len(sources) > 0:
-            logger.info(f"sources: {sources}")
+            logger.debug(f"sources: {sources}")
             # Replace pattern with the source number
             def replace_with_source_number(match):
                 document_id = match.group(1)

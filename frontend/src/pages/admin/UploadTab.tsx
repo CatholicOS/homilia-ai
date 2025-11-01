@@ -44,7 +44,7 @@ export default function UploadTab() {
           <label className="block text-sm text-zinc-300 mb-2">Sermon date (optional)</label>
           <DatePicker
             selected={sermonDate}
-            onChange={(date) => setSermonDate(date)}
+            onChange={(date: Date | null) => setSermonDate(date)}
             placeholderText="Select date"
             className="w-full bg-zinc-950 border border-zinc-700 rounded-md px-3 py-2"
             calendarClassName="bg-zinc-900 border border-zinc-700 text-zinc-100"

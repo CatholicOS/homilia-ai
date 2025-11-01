@@ -12,7 +12,6 @@ export default function LandingPage() {
         </p>
         <div className="mt-10 flex items-center justify-center gap-4">
           <Link to="/chat" className="btn btn-primary">Start now</Link>
-          <Link to="/admin" className="btn btn-secondary">Admin console</Link>
         </div>
       </div>
     </section>

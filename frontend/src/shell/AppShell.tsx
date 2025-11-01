@@ -13,7 +13,6 @@ export default function AppShell() {
           </Link>
           <div className="flex items-center gap-4">
             <ParishSelector />
-            <button className="btn btn-secondary hidden md:inline-flex" onClick={() => navigate('/admin')}>Admin</button>
             <button className="btn btn-primary" onClick={() => navigate('/chat')}>Start chat</button>
           </div>
         </div>
@@ -28,7 +27,6 @@ export default function AppShell() {
           <span>© {new Date().getFullYear()} Homilia</span>
           <nav className="flex gap-6">
             <Link to="/" className="hover:text-zinc-200">Home</Link>
-            <Link to="/admin" className="hover:text-zinc-200">Admin</Link>
           </nav>
         </div>
       </footer>
